@@ -1,0 +1,104 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "redirection-operator.clusterRoleName" . }}
+  labels:
+    {{- include "redirection-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redirector.io
+  resources:
+  - redirections
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redirector.io
+  resources:
+  - redirections/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redirector.io
+  resources:
+  - redirections/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redirector.io
+  resources:
+  - domainbindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redirector.io
+  resources:
+  - domainbindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redirector.io
+  resources:
+  - domainbindings/status
+  verbs:
+  - get
+  - patch
+  - update
+{{- end }}

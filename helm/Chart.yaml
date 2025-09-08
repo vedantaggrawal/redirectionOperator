@@ -1,0 +1,20 @@
+apiVersion: v2
+name: redirection-operator
+description: A Kubernetes operator for managing domain redirections with automatic sharding and certificate management
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://github.com/your-org/redirection-operator
+sources:
+  - https://github.com/your-org/redirection-operator
+maintainers:
+  - name: Your Name
+    email: your-email@example.com
+keywords:
+  - kubernetes
+  - operator
+  - ingress
+  - redirect
+  - certificate
+annotations:
+  category: Infrastructure

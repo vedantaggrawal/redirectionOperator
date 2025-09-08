@@ -1,0 +1,148 @@
+# Default values for redirection-operator
+replicaCount: 1
+
+image:
+  repository: redirection-operator
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+# Operator configuration
+operator:
+  # Default maximum hosts per shard
+  defaultMaxHosts: 50
+  # Default TLS setting
+  defaultTLSEnabled: true
+  # Default ingress class
+  defaultIngressClass: "nginx"
+  # Leader election
+  leaderElection:
+    enabled: true
+    leaseDuration: "15s"
+    renewDeadline: "10s"
+    retryPeriod: "2s"
+  # Reconciliation intervals
+  reconciliation:
+    redirectionRequeueAfter: "5m"
+    domainBindingRequeueAfter: "10m"
+  # Certificate management
+  certificates:
+    # Let's Encrypt rate limits
+    maxCertsPerWeek: 50
+    rateLimitBuffer: 5
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+# RBAC configuration
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 8080
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# Health checks
+#livenessProbe: {}
+#  httpGet:
+#    path: /healthz
+#    port: 8081
+#  initialDelaySeconds: 15
+#  periodSeconds: 20
+#
+#readinessProbe: {}
+#    path: /readyz
+#    port: 8081
+#  initialDelaySeconds: 5
+#  periodSeconds: 10
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Monitoring
+monitoring:
+  # Create ServiceMonitor for Prometheus
+  enabled: false
+  # Additional labels for ServiceMonitor
+  additionalLabels: {}
+  # Scraping interval
+  interval: 30s
+  # Scraping path
+  path: /metrics
+  # Scraping port
+  port: metrics
+
+# Webhook configuration (for future use)
+webhook:
+  enabled: false
+  port: 9443
+  certDir: /tmp/k8s-webhook-server/serving-certs
+
+# Logging configuration
+logging:
+  level: info
+  development: false
+  encoder: json
+
+# CRD installation
+crds:
+  # Whether to install CRDs
+  install: true
+  # Whether to keep CRDs on uninstall
+  keep: true
+
+# Network policies
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []

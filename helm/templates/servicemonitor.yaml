@@ -1,0 +1,20 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "redirection-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "redirection-operator.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "redirection-operator.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: {{ .Values.monitoring.port }}
+    path: {{ .Values.monitoring.path }}
+    interval: {{ .Values.monitoring.interval }}
+{{- end }}
