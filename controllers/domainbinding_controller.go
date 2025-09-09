@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -170,54 +171,52 @@ func (r *DomainBindingReconciler) updateIngress(ctx context.Context, ingress *ne
 	newIngress := r.buildIngress(binding, ingress.Name)
 
 	// Preserve existing metadata
-	newIngress.ObjectMeta = ingress.ObjectMeta
+	//newIngress.ObjectMeta = ingress.ObjectMeta
 	newIngress.ResourceVersion = ingress.ResourceVersion
 
 	return r.Update(ctx, newIngress)
 }
 
 func (r *DomainBindingReconciler) buildIngress(binding *redirectorv1.DomainBinding, ingressName string) *networkingv1.Ingress {
-	// Collect all sources and sort them for consistency
 	var allSources []string
+	sourceSet := make(map[string]struct{})
+	var configSnippets []string
+	var serverSnippets []string
+
 	for _, group := range binding.Spec.Groups {
 		for source := range group.Sources {
 			allSources = append(allSources, source)
+			sourceSet[source] = struct{}{}
 		}
 	}
 	sort.Strings(allSources)
 
-	// Build TLS configuration
+	// Build TLS configuration (unchanged)
 	var tlsConfig []networkingv1.IngressTLS
 	for groupIndex, group := range binding.Spec.Groups {
 		var hosts []string
 		for source := range group.Sources {
 			hosts = append(hosts, source)
 		}
-		sort.Strings(hosts) // Ensure consistent ordering
-
+		sort.Strings(hosts)
 		if len(hosts) > 0 {
 			tlsConfig = append(tlsConfig, networkingv1.IngressTLS{
 				Hosts:      hosts,
 				SecretName: group.SecretName,
 			})
 		}
-
-		// Update certificate status
 		if binding.Status.CertificateStatus == nil {
 			binding.Status.CertificateStatus = make(map[string]string)
 		}
 		binding.Status.CertificateStatus[groupIndex] = "Requested"
 	}
-
-	// Sort TLS config by secret name for consistency
 	sort.Slice(tlsConfig, func(i, j int) bool {
 		return tlsConfig[i].SecretName < tlsConfig[j].SecretName
 	})
 
-	// Build rules for all sources
+	// Build rules for all sources (unchanged)
 	var rules []networkingv1.IngressRule
 	pathType := networkingv1.PathTypePrefix
-
 	for _, source := range allSources {
 		rules = append(rules, networkingv1.IngressRule{
 			Host: source,
@@ -240,15 +239,56 @@ func (r *DomainBindingReconciler) buildIngress(binding *redirectorv1.DomainBindi
 				},
 			},
 		})
+
+		// Configuration snippet: HTTPS redirect logic
+		if strings.HasPrefix(source, "www.") {
+			// Redirect www.domain → destination
+			configSnippets = append(configSnippets,
+				fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
+					source, binding.Spec.Destination),
+			)
+		} else {
+			wwwSource := "www." + source
+			if _, exists := sourceSet[wwwSource]; exists {
+				// Naked → www. (if www exists)
+				configSnippets = append(configSnippets,
+					fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
+						source, wwwSource),
+				)
+			} else {
+				// Naked → destination (if no www exists)
+				configSnippets = append(configSnippets,
+					fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
+						source, binding.Spec.Destination),
+				)
+			}
+		}
+
+		// Server snippet: HTTP redirect logic
+		serverSnippets = append(serverSnippets, fmt.Sprintf(`if ($scheme = http) {if ($host = "%s") {return 301 https://%s$request_uri;}
+}`, source, source))
+	}
+
+	annotations := map[string]string{
+		AnnotationCertManager: DefaultClusterIssuer,
+	}
+
+	// Add configuration-snippet if needed
+	if len(configSnippets) > 0 {
+		annotations["nginx.ingress.kubernetes.io/configuration-snippet"] =
+			`more_set_headers "X-Content-Type-Options: nosniff";` + "\n" + strings.Join(configSnippets, "\n")
+	}
+
+	// Add server-snippet if needed
+	if len(serverSnippets) > 0 {
+		annotations["nginx.ingress.kubernetes.io/server-snippet"] = strings.Join(serverSnippets, "\n")
 	}
 
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ingressName,
-			Namespace: binding.Namespace,
-			Annotations: map[string]string{
-				AnnotationCertManager: DefaultClusterIssuer,
-			},
+			Name:        ingressName,
+			Namespace:   binding.Namespace,
+			Annotations: annotations,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "domain-redirector",
 				"app.kubernetes.io/component":  "ingress",

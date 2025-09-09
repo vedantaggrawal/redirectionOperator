@@ -51,8 +51,7 @@ spec:
                 description: Destination is the target domain to redirect to
                 type: string
               maxHosts:
-                description: MaxHosts is the maximum number of hosts per TLS certificate
-                  group (default: 10)
+                description: MaxHosts is the maximum number of hosts per TLS certificate group (default:10)
                 type: integer
               sources:
                 description: Sources is the list of domains to redirect from

@@ -1,29 +1,23 @@
-# Build the manager binary
-FROM golang:1.24 as builder
+# Start from official Go image
+FROM golang:1.24 AS builder
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum first (caching)
+COPY go.mod go.sum ./
+
+# Download dependencies
 RUN go mod download
 
-# Copy the go source
-COPY api .
-COPY controllers .
-COPY pkg .
+# Copy the rest of the source code
+COPY . .
 
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o redirection-operator main.go
 
-COPY main.go main.go
-
-# Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
-
-# Use distroless as minimal base image to package the manager binary
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /workspace/manager .
-USER 65532:65532
-
-ENTRYPOINT ["/manager"]
+# Minimal runtime image
+FROM gcr.io/distroless/base-debian10
+WORKDIR /app
+COPY --from=builder /app/redirection-operator .
+CMD ["./redirection-operator"]

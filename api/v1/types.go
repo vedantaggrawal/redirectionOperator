@@ -124,3 +124,12 @@ type DomainBindingList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DomainBinding `json:"items"`
 }
+
+func init() {
+	SchemeBuilder.Register(
+		&DomainBinding{},
+		&DomainBindingList{},
+		&Redirection{},
+		&RedirectionList{},
+	)
+}
