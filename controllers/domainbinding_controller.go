@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redirectorv1 "github.com/vedantaggrawal/redirectionOperator/api/v1"
+	metrics "github.com/vedantaggrawal/redirectionOperator/metrics"
 	utils "github.com/vedantaggrawal/redirectionOperator/pkg/utils"
 )
 
@@ -65,6 +66,14 @@ func (r *DomainBindingReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		log.Error(err, "Failed to get DomainBinding")
 		return ctrl.Result{}, err
 	}
+
+	metrics.GroupsPerParentDomainTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Set(float64(binding.Status.TotalGroups))
+
+	metrics.SourcesPerParentDomainTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Set(float64(binding.Status.TotalSources))
+
+	metrics.SourcePerGroupUpdatesTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Inc()
+
+	metrics.ParentDomainUpdatesTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Inc()
 
 	// Handle deletion
 	if binding.DeletionTimestamp != nil {
@@ -242,27 +251,18 @@ func (r *DomainBindingReconciler) buildIngress(binding *redirectorv1.DomainBindi
 
 		// Configuration snippet: HTTPS redirect logic
 		if strings.HasPrefix(source, "www.") {
+			rest := strings.TrimPrefix(source, "www.")
 			// Redirect www.domain → destination
 			configSnippets = append(configSnippets,
 				fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
-					source, binding.Spec.Destination),
+					rest, source),
 			)
-		} else {
-			wwwSource := "www." + source
-			if _, exists := sourceSet[wwwSource]; exists {
-				// Naked → www. (if www exists)
-				configSnippets = append(configSnippets,
-					fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
-						source, wwwSource),
-				)
-			} else {
-				// Naked → destination (if no www exists)
-				configSnippets = append(configSnippets,
-					fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
-						source, binding.Spec.Destination),
-				)
-			}
 		}
+		// Naked → destination (if no www exists)
+		configSnippets = append(configSnippets,
+			fmt.Sprintf(`if ($host = "%s") { return 301 https://%s$request_uri; }`,
+				source, binding.Spec.Destination),
+		)
 
 		// Server snippet: HTTP redirect logic
 		serverSnippets = append(serverSnippets, fmt.Sprintf(`if ($scheme = http) {if ($host = "%s") {return 301 https://%s$request_uri;}
