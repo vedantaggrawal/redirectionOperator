@@ -1,0 +1,57 @@
+apiVersion: redirector.io/v1
+kind: Redirection
+spec:
+  destination: new-site.example.com
+  maxHosts: 10
+  sources:
+    - old-site.example.com
+    - legacy.example.com
+    - proof.nl
+    - www.proof.nl
+    - www.example.com
+    - api5.example.com
+    - api6.example.com
+    - api7.example.com
+    - api8.example.com
+    - api9.example.com
+    - app1.example.com
+    - app2.example.com
+    - app3.example.com
+    - app4.example.com
+    - test1.example.com
+    - test2.example.com
+    - test3.example.com
+    - test4.example.com
+    - test5.example.com
+    - stage1.example.com
+    - stage2.example.com
+    - dev1.example.com
+    - dev2.example.com
+    - dev3.example.com
+    - dev4.example.com
+    - dev5.example.com
+    - mail1.example.com
+    - mail2.example.com
+    - mail3.example.com
+    - mail4.example.com
+    - mail5.example.com
+    - shop1.example.com
+    - shop2.example.com
+    - blog1.example.com
+    - blog2.example.com
+    - blog3.example.com
+    - blog4.example.com
+    - blog5.example.com
+    - cdn1.example.com
+    - cdn2.example.com
+    - cdn3.example.com
+    - cdn4.example.com
+    - cdn5.example.com
+    - img1.example.com
+    - img2.example.com
+    - img3.example.com
+    - img4.example.com
+    - img5.example.com
+    - video1.example.com
+    - video8.example.com
+    - video9.example.com
