@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redirectorv1 "github.com/vedantaggrawal/redirectionOperator/api/v1"
-	metrics "github.com/vedantaggrawal/redirectionOperator/metrics"
 	utils "github.com/vedantaggrawal/redirectionOperator/pkg/utils"
 )
 
@@ -66,14 +65,6 @@ func (r *DomainBindingReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		log.Error(err, "Failed to get DomainBinding")
 		return ctrl.Result{}, err
 	}
-
-	metrics.GroupsPerParentDomainTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Set(float64(binding.Status.TotalGroups))
-
-	metrics.SourcesPerParentDomainTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Set(float64(binding.Status.TotalSources))
-
-	metrics.SourcePerGroupUpdatesTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Inc()
-
-	metrics.ParentDomainUpdatesTotal.WithLabelValues(binding.Spec.ParentDomain, binding.Spec.Destination).Inc()
 
 	// Handle deletion
 	if binding.DeletionTimestamp != nil {

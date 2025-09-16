@@ -2,9 +2,9 @@
 replicaCount: 1
 
 image:
-  repository: redirection-operator
-  pullPolicy: IfNotPresent
-  tag: "latest"
+  repository: vedant31/redirect-operator
+  pullPolicy: Always
+  tag: "latest-arm64"
 
 imagePullSecrets: []
 nameOverride: ""

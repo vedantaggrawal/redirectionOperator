@@ -15,7 +15,6 @@ import (
 
 	redirectorv1 "github.com/vedantaggrawal/redirectionOperator/api/v1"
 	"github.com/vedantaggrawal/redirectionOperator/controllers"
-	"github.com/vedantaggrawal/redirectionOperator/metrics"
 )
 
 var (
@@ -29,7 +28,6 @@ func init() {
 }
 
 func main() {
-	metrics.Init()
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string

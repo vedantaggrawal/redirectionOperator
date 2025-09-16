@@ -1,5 +1,8 @@
 apiVersion: redirector.io/v1
 kind: Redirection
+metadata:
+  name: example-redirection
+  namespace: default
 spec:
   destination: new-site.example.com
   maxHosts: 10
